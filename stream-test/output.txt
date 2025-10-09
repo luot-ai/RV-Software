@@ -1,0 +1,35 @@
+[33m[SCALA][0m Zircon
+[info] welcome to sbt 1.11.4 (Oracle Corporation Java 17.0.12)
+[info] loading settings for project zircon-2024-main1-build-build from metals.sbt...
+[info] loading project definition from /home/luoteng/Zircon-2024-main1/project/project
+[info] loading settings for project zircon-2024-main1-build from metals.sbt...
+[info] loading project definition from /home/luoteng/Zircon-2024-main1/project
+[success] Generated .bloop/zircon-2024-main1-build.json
+[success] Total time: 2 s, completed Sep 25, 2025, 4:43:40 AM
+[info] loading settings for project zircon-2024-main1 from build.sbt...
+[info] set current project to zircon-2024-main1 (in build file:/home/luoteng/Zircon-2024-main1/)
+[info] running Main 
+isSim: true
+[success] Total time: 11 s, completed Sep 25, 2025, 4:43:52 AM
+[36m[VERILATE][0m build/VCPU
+- V e r i l a t i o n   R e p o r t: Verilator 5.039 devel rev UNKNOWN.REV
+- Verilator: Built from 0.000 MB sources in 0 modules, into 0.000 MB in 0 C++ files needing 0.000 MB
+- Verilator: Walltime 0.024 s (elab=0.000, cvt=0.000, bld=0.000); cpu 0.024 s on 8 threads; alloced 21.879 MB
+[36m[MAKE][0m build/VCPU
+[33m[RUN][0m build/VCPU
+========================================
+[1;36mSIMULATION STARTED.[0m
+========================================
+[1;32mSIMULATION ENDED SUCCESSFULLY.[0m
+[1;36mLast 8 instructions:[0m
+[1;35m8000005c: fff60613
+80000060: 0005300b
+80000064: fe061ae3
+80000068: 00000513
+8000006c: 7f010113
+80000070: 02010113
+80000074: 00008067
+800000a4: 80000000
+[0m[1;36mTotal cycles: 1759, Total insts: 2081, IPC: 1.18306[0m
+========================================
+           add: [[1;32mACCEPT[0m]
