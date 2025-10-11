@@ -250,7 +250,7 @@ int test_impulse() {
     
     complex_t fft_output[16];
     
-    // ->BLOCK7-21
+    // ->BLOCK6-22
     fft_16_point(test_input, fft_output);
     
     // Verify results: all bins should have similar magnitude
