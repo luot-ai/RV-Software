@@ -1,0 +1,22 @@
+Total cycles: 86073, IPC: 0.5946========================================
+Total cycles: 137545, Total insts: 82046, IPC: 0.596503
+Total cycles: 88164, IPC: 0.593859========================================
+Total cycles: 137692, Total insts: 82046, IPC: 0.595866
+Total cycles: 89516, IPC: 0.595775========================================
+Total cycles: 137240, Total insts: 82046, IPC: 0.597829
+Total cycles: 93835, IPC: 0.600292========================================
+Total cycles: 136223, Total insts: 82046, IPC: 0.602292
+Total cycles: 88077, IPC: 0.593485========================================
+Total cycles: 137858, Total insts: 82046, IPC: 0.595149
+Total cycles: 86868, IPC: 0.59359========================================
+Total cycles: 137781, Total insts: 82046, IPC: 0.595481
+Total cycles: 93022, IPC: 0.595906========================================
+Total cycles: 137277, Total insts: 82046, IPC: 0.597667
+Total cycles: 85950, IPC: 0.584619========================================
+Total cycles: 139840, Total insts: 82046, IPC: 0.586713
+Total cycles: 94183, IPC: 0.596428========================================
+Total cycles: 137082, Total insts: 82046, IPC: 0.598518
+Total cycles: 93243, IPC: 0.5897========================================
+Total cycles: 138669, Total insts: 82046, IPC: 0.591668
+✅ 平均 Total cycles: 89893237720.70
+✅ 平均 IPC: 0

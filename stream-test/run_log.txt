@@ -1,0 +1,6 @@
+Total cycles: 32914, Total insts: 41056, IPC: 1.24737
+Total cycles: 33026, Total insts: 41056, IPC: 1.24314
+Total cycles: 33137, Total insts: 41056, IPC: 1.23898
+Total cycles: 20336, Total insts: 24653, IPC: 1.21228
+✅ 平均 Total cycles: 29853.25
+✅ 平均 IPC: 0
