@@ -15,15 +15,15 @@ static int cfg_i(int outerIter,int length,int fifo_id)
 }
 
 //011
-static int step_i(int i_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 3, 0, x0, %0, x0"
-             :
-             :"r"(i_id)
-     );
-    return 0; 
-}
+// static int step_i(int i_id)
+// {
+//     asm volatile (
+//        ".insn r 0x0b, 3, 0, x0, %0, x0"
+//              :
+//              :"r"(i_id)
+//      );
+//     return 0; 
+// }
 
 //101
 static int cfg_load(uint32_t addr,int fifo_id)
@@ -117,7 +117,7 @@ int main() {
             496,497,498,499, 500,501,502,503, 504,505,506,507, 508,509,510,511
         };
         int c[512] ;
-    int test = 20;
+    int test = 1;
 	cfg_i(test,512,0); //
 	cfg_i(test,512,1); //
 	cfg_load((uint32_t)a,0);
@@ -132,7 +132,7 @@ int main() {
         for (int i = 0;i<512;i++)
         {
             cal_stream(0,1,2);
-            step_i(0);
+            //step_i(0);
         }
     }
 
