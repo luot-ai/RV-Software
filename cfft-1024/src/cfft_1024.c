@@ -29,7 +29,8 @@ static inline void complex_subtract(complex_t a, complex_t b, complex_t* result)
 
 
 
-// 16位数据的位反转
+// 16位数据的位反转 
+// 13：72239：1.84
 static inline uint16_t bit_reverse_u16(uint16_t x, int bits) {
     uint16_t r = 0;
     for (int i = 0; i < bits; i++) {
@@ -41,10 +42,11 @@ static inline uint16_t bit_reverse_u16(uint16_t x, int bits) {
 //
 //复杂度：O(N * LOG2_FFT_N)，通过逐次计算 rev(i) 避免预生成查表。
 // 位反转重排（就地）
+// 15：56280 0.6
 static void bit_reverse_reorder_generic(complex_t* data) {
     for (uint16_t i = 0; i < FFT_N; i++) {
         uint16_t j = bit_reverse_u16(i, LOG2_FFT_N);
-        if (j > i) {
+        if (j > i) { //14：17327：0.89
             complex_t t = data[i];
             data[i] = data[j];
             data[j] = t;
@@ -73,14 +75,18 @@ static void init_twiddles(void) {
 }
 
 void fft_1024_point(const complex_t input[FFT_N], complex_t output[FFT_N]) {
+    //8：10915：1.5
     init_twiddles();
 
+    //11：60131：0.6，占4%
     for (int i = 0; i < FFT_N; i++) {
         output[i] = input[i];
     }
+    // 13-15:总共占10.72%
     bit_reverse_reorder_generic(output);
 
     // 分段蝶形：m=2,4,...,1024；step=N/m，从 N/2 开始每级右移一位
+    // 占75%
     int m = 2;//蝶形长度
     int step = FFT_N >> 1; // N/m，旋转因子步长
     while (m <= FFT_N) {
@@ -163,6 +169,7 @@ int test_impulse_1024() {
     complex_t test_input[FFT_N];
     
     test_input[0].real = 32767; test_input[0].imag = 0;  
+    //4：8752 0.47
     for (int i = 1; i < FFT_N; i++) {
         test_input[i].real = 0;
         test_input[i].imag = 0;
