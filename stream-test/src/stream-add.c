@@ -15,15 +15,15 @@ static int cfg_i(int outerIter,int length,int fifo_id)
 }
 
 //011
-// static int step_i(int i_id)
-// {
-//     asm volatile (
-//        ".insn r 0x0b, 3, 0, x0, %0, x0"
-//              :
-//              :"r"(i_id)
-//      );
-//     return 0; 
-// }
+static int cfg_stride(uint32_t stride,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 3, 0, x0, %0, %1"
+             :
+             :"r"(stride),"r"(fifo_id)
+     );
+    return 0; 
+}
 
 //101
 static int cfg_load(uint32_t addr,int fifo_id)
@@ -120,8 +120,11 @@ int main() {
     int test = 1;
 	cfg_i(test,512,0); //
 	cfg_i(test,512,1); //
-	cfg_load((uint32_t)a,0);
+    cfg_stride(8,0);
+    cfg_stride(8,1); 
+    cfg_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
 	cfg_load((uint32_t)b,1);
+
 
 	cfg_i(test,512,2);
 	cfg_store((uint32_t)c,2);
@@ -129,7 +132,7 @@ int main() {
     for(int t =0; t<test; t++)
     {
         #pragma nounroll
-        for (int i = 0;i<512;i++)
+        for (int i = 0;i<256;i++)
         {
             cal_stream(0,1,2);
             //step_i(0);
