@@ -25,6 +25,17 @@ static int cfg_stride(uint32_t stride,int fifo_id)
     return 0; 
 }
 
+//100
+static int cfg_reuse(uint32_t reuse,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 4, 0, x0, %0, %1"
+             :
+             :"r"(reuse),"r"(fifo_id)
+     );
+    return 0; 
+}
+
 //101
 static int cfg_load(uint32_t addr,int fifo_id)
 {
@@ -120,6 +131,8 @@ int main() {
     int test = 1;
 	cfg_i(test,512,0); //
 	cfg_i(test,512,1); //
+    cfg_reuse(1,0);
+    cfg_reuse(1,1);
     cfg_stride(8,0);
     cfg_stride(8,1); 
     cfg_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
