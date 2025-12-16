@@ -162,7 +162,7 @@ int main() {
     int M,N,K = 16;
 	cfg_i(test,256,0);  // m*k
 	cfg_i(test,4096,1); // m*(k*n)
-    cfg_reuse(n,0);
+    cfg_reuse(N,0);
     cfg_reuse(1,1);
     cfg_stride(1,0);
     cfg_stride(N,1); 

@@ -46,27 +46,16 @@ static int cfg_store(uint32_t addr,int fifo_id)
 }
 
 //010
-static int cal_stream(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
-{
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 2, 0, x0, %0, %1"
-             :
-             :"r"(rs1),"r"(fifo_id_dst)
-     );
-    return 0; 
-}
-
-static int cal_stream_mul(int fifo_id_src0,int fifo_id_src1,int reg_dst)
-{
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 2, 0, x0, %0, %1"
-             :
-             :"r"(rs1),"r"(reg_dst)
-     );
-    return 0; 
-}
+// static int cal_stream(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
+// {
+// 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+//     asm volatile (
+//        ".insn r 0x0b, 2, 0, x0, %0, %1"
+//              :
+//              :"r"(rs1),"r"(fifo_id_dst)
+//      );
+//     return 0; 
+// }
 
 //011
 static int cfg_stride(uint32_t stride,int fifo_id)
@@ -112,17 +101,18 @@ static int cfg_tilestride(uint32_t tilestride,int fifo_id)
     return 0; 
 }
 
-// //111
-// static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1,int reg_dst)
-// {
-// 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-//     asm volatile (
-//        ".insn r 0x0b, 7, 0, %0, %1, x0"
-//              :"=r"(reg_dst) 
-//              :"r"(rs1)
-//      );
-//     return 0; 
-// }
+//111
+static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1)
+{
+    int rd;
+	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+    asm volatile (
+       ".insn r 0x0b, 7, 0, %0, %1, x0"
+             :"=r"(rd) 
+             :"r"(rs1)
+     );
+    return rd; 
+}
 
 int test_data[] = {0, 1, 2, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff};
 int ans[] = {0, 0x1, 0x2, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff, 0x1, 0x2, 0x3, 0x80000000, 0x80000001, 0x80000002, 0xffffffff, 0, 0x2, 0x3, 0x4, 0x80000001, 0x80000002, 0x80000003, 0, 0x1, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff, 0, 0x7ffffffd, 0x7ffffffe, 0x80000000, 0x80000001, 0x80000002, 0xffffffff, 0, 0x1, 0x7ffffffe, 0x7fffffff, 0x80000001, 0x80000002, 0x80000003, 0, 0x1, 0x2, 0x7fffffff, 0x80000000, 0xfffffffe, 0xffffffff, 0, 0x7ffffffd, 0x7ffffffe, 0x7fffffff, 0xfffffffc, 0xfffffffd, 0xffffffff, 0, 0x1, 0x7ffffffe, 0x7fffffff, 0x80000000, 0xfffffffd, 0xfffffffe};
@@ -139,9 +129,9 @@ int main() {
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
-        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0,
+        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0, 
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
-        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,  
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0,
         1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0  ,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
@@ -183,12 +173,18 @@ int main() {
         };
         int c[512] ;
     int test = 1;
-	cfg_i(test,256,0); //
-	cfg_i(test,256,1); //
-    cfg_reuse(1,0);
+	cfg_i(test,256,0); //length = 256
+	cfg_i(test,256,1); //length = 256
+    cfg_reuse(16,0); //a每个数使用16次
     cfg_reuse(1,1);
+    cfg_i_limit(16,0);//limit：15回环
+    cfg_i_limit(512,1);//no limit
+    cfg_i_repeat(16,0);//16*16
+    cfg_i_repeat(1,1);
     cfg_stride(8,0);
     cfg_stride(8,1); 
+    cfg_tilestride(256,0);//l2-line * stride
+    cfg_tilestride(256,1);//l2-line * stride
     cfg_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
 	cfg_load((uint32_t)b,1);
 
@@ -196,16 +192,17 @@ int main() {
 	cfg_i(test,256,2);
 	cfg_store((uint32_t)c,2);
 
+    int acc = 0;
     for(int t =0; t<test; t++)
     {
         #pragma nounroll
         for (int i = 0;i<256;i++)
         {
-            cal_stream(0,1,2);
-            //step_i(0);
+            acc += cal_stream_rd(0,1);
+            // cal_stream(0,1,2);
         }
     }
-
+    printf("acc is %d",acc);
 
 	return 0;
 }
