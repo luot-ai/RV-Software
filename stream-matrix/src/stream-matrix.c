@@ -1,0 +1,193 @@
+#include "trap.h"
+
+
+//000
+static int cfg_i(int outerIter,int length,int fifo_id)
+{
+    int rs1 = (outerIter & 0xffff) | ((length & 0xffff) << 16);
+    asm volatile (
+       ".insn r 0x0b, 0, 0, x0, %0, %1"
+             :
+             :"r"(rs1),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+static int cfg_i_limit(int limit,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 0, 1, x0, %0, %1"
+             :
+             :"r"(limit),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+static int cfg_i_repeat(int repeat,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 0, 2, x0, %0, %1"
+             :
+             :"r"(repeat),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+
+//001
+static int cfg_store(uint32_t addr,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 1, 0, x0, %0, %1"
+             :
+             :"r"(addr),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+//010
+static int cal_stream(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
+{
+	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+    asm volatile (
+       ".insn r 0x0b, 2, 0, x0, %0, %1"
+             :
+             :"r"(rs1),"r"(fifo_id_dst)
+     );
+    return 0; 
+}
+
+//011
+static int cfg_stride(uint32_t stride,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 3, 0, x0, %0, %1"
+             :
+             :"r"(stride),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+//100
+static int cfg_reuse(uint32_t reuse,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 4, 0, x0, %0, %1"
+             :
+             :"r"(reuse),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+//101
+static int cfg_load(uint32_t addr,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 5, 0, x0, %0, %1"
+             :
+             :"r"(addr),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+//110
+static int cfg_tilestride(uint32_t tilestride,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 6, 0, x0, %0, %1"
+             :
+             :"r"(tilestride),"r"(fifo_id)
+     );
+    return 0; 
+}
+
+//111
+static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1,int reg_dst)
+{
+	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+    asm volatile (
+       ".insn r 0x0b, 7, 0, %0, %1, x0"
+             :"=r"(reg_dst) 
+             :"r"(rs1)
+     );
+    return 0; 
+}
+
+int test_data[] = {0, 1, 2, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff};
+int ans[] = {0, 0x1, 0x2, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff, 0x1, 0x2, 0x3, 0x80000000, 0x80000001, 0x80000002, 0xffffffff, 0, 0x2, 0x3, 0x4, 0x80000001, 0x80000002, 0x80000003, 0, 0x1, 0x7fffffff, 0x80000000, 0x80000001, 0xfffffffe, 0xffffffff, 0, 0x7ffffffd, 0x7ffffffe, 0x80000000, 0x80000001, 0x80000002, 0xffffffff, 0, 0x1, 0x7ffffffe, 0x7fffffff, 0x80000001, 0x80000002, 0x80000003, 0, 0x1, 0x2, 0x7fffffff, 0x80000000, 0xfffffffe, 0xffffffff, 0, 0x7ffffffd, 0x7ffffffe, 0x7fffffff, 0xfffffffc, 0xfffffffd, 0xffffffff, 0, 0x1, 0x7ffffffe, 0x7fffffff, 0x80000000, 0xfffffffd, 0xfffffffe};
+
+#define NR_DATA LENGTH(test_data)
+
+int main() {
+	static int a[16][16] = {
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+            {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1} 
+    };
+    
+    static int b[16][16] = {
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, 
+        {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1} 
+};
+    
+    int c[16][16];
+    int test = 1;
+    int M,N,K = 16;
+	cfg_i(test,256,0);  // m*k
+	cfg_i(test,4096,1); // m*(k*n)
+    cfg_reuse(n,0);
+    cfg_reuse(1,1);
+    cfg_stride(1,0);
+    cfg_stride(N,1); 
+    cfg_tilestride(64,0); //byte = k*4
+    cfg_tilestride(4,1); //byte = 4
+    cfg_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
+	cfg_load((uint32_t)b,1);
+
+
+        for (int i = 0; i < M; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {    
+                int sum = 0;
+                for (int k = 0; k < K; k++)
+                {
+                    int res = 0;
+                    cal_stream_rd(0,1,res);
+                    sum += res;
+                }
+                c[i][j]= sum;
+            }
+        }
+
+
+	return 0;
+}
+
