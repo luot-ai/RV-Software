@@ -90,6 +90,16 @@ static int cfg_load(uint32_t addr,int fifo_id)
     return 0; 
 }
 
+static int cfg_axi_load(uint32_t addr,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 5, 1, x0, %0, %1"
+             :
+             :"r"(addr),"r"(fifo_id)
+     );
+    return 0; 
+}
+
 //110
 static int cfg_tilestride(uint32_t tilestride,int fifo_id)
 {
@@ -237,7 +247,7 @@ int main() {
     cfg_stride(N*4,1); //N*4
     cfg_tilestride(K*4,0); //byte = k*4
     cfg_tilestride(4,1); //byte = 4
-    cfg_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
+    cfg_axi_load((uint32_t)a,0); //这条指令必须在 配置stride指令之后
 	cfg_load((uint32_t)b,1);
 
 
@@ -249,10 +259,10 @@ int main() {
         c[i] = sum;
     }
 
-    for(int i = 0; i<M*N;i++)
-    {
-        printf("c[%d] is %d \n", i,c[i]);
-    }
+    // for(int i = 0; i<M*N;i++)
+    // {
+    //     printf("c[%d] is %d \n", i,c[i]);
+    // }
 
 
 	return 0;
