@@ -63,14 +63,12 @@ int main() {
 		496,497,498,499, 500,501,502,503, 504,505,506,507, 508,509,510,511
 	};
 	volatile int c[512] ;
-	int test = 20;
-	for(int t=0;t<test;t++)
-	{
+
 		for(int i=0;i<512;i++)
 		{
 			c[i] = a[i] + b[i];
 		}
-	}
+
 	return 0;
 }
 
