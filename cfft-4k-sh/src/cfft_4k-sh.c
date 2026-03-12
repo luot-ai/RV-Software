@@ -53,6 +53,7 @@ static void init_twiddles(void) {
 #define LOG2_FFT_128 7
 
 static complex_t twiddle_stage[FFT_128/2];
+static complex_t twiddle_stage_32[FFT_32/2];
 
 static void reshape_twiddles_128(void)
 {
@@ -62,12 +63,12 @@ static void reshape_twiddles_128(void)
     }
 }
 
-static complex_t twiddle_stage_32[FFT_32/2];
+
 
 static void reshape_twiddles_32(void)
 {
     for (int p = 0; p < FFT_32/2; p++) {
-        twiddle_stage[p] = twiddle_factors[ p << 7 ];
+        twiddle_stage_32[p] = twiddle_factors[ p << 7 ];
     }
 }
 
@@ -218,7 +219,11 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
 
     // Stage 4: N1 × N2 FFT
     reshape_twiddles_32();
-    for (int b = 0; b < N1; b++) fft_32_stockham(temp[b]);
+
+    for (int b = 0; b < N1; b++) 
+    {
+        fft_32_stockham(temp[b]);
+    }
 
     // Stage 5: transpose
     transpose_mxn_block_16x8(&temp[0][0], &output[0], 32, 128);
