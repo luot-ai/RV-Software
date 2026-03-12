@@ -52,9 +52,27 @@ static void init_twiddles(void) {
 #define FFT_128 128
 #define LOG2_FFT_128 7
 
-void fft_128_stockham(complex_t output[FFT_128])
+static complex_t twiddle_stage[FFT_128/2];
+
+static void reshape_twiddles_128(void)
 {
     init_twiddles();
+    for (int p = 0; p < FFT_128/2; p++) {
+        twiddle_stage[p] = twiddle_factors[ p << 5 ];
+    }
+}
+
+static complex_t twiddle_stage_32[FFT_32/2];
+
+static void reshape_twiddles_32(void)
+{
+    for (int p = 0; p < FFT_32/2; p++) {
+        twiddle_stage[p] = twiddle_factors[ p << 7 ];
+    }
+}
+
+void fft_128_stockham(complex_t output[FFT_128])
+{
     complex_t y[FFT_128];
     complex_t *src = output;
     complex_t *dst = y;
@@ -65,8 +83,8 @@ void fft_128_stockham(complex_t output[FFT_128])
         int m = FFT_128 >> (stage + 1);      /* current half size */
 
         for (int p = 0; p < m; p++) {
-            int tw_idx = (p << stage) << 5;
-            complex_t wp = twiddle_factors[tw_idx];
+            int tw_idx = (p << stage) ;
+            complex_t wp = twiddle_stage[tw_idx];
 
             for (int q = 0; q < s; q++) {
                 complex_t a = src[q + s * (p + 0)];
@@ -99,7 +117,6 @@ void fft_128_stockham(complex_t output[FFT_128])
 
 void fft_32_stockham(complex_t output[FFT_32])
 {
-    init_twiddles();
     complex_t y[FFT_32];
     complex_t *src = output;
     complex_t *dst = y;
@@ -110,8 +127,8 @@ void fft_32_stockham(complex_t output[FFT_32])
         int m = FFT_32 >> (stage + 1);      /* current half size */
 
         for (int p = 0; p < m; p++) {
-            int tw_idx = (p << stage) << 7;
-            complex_t wp = twiddle_factors[tw_idx];
+            int tw_idx = (p << stage);
+            complex_t wp = twiddle_stage_32[tw_idx];
 
             for (int q = 0; q < s; q++) {
                 complex_t a = src[q + s * (p + 0)];
@@ -170,7 +187,7 @@ void transpose_mxn_block_16x8(
 static complex_t temp[N1][N2];
 void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
     init_twiddles();
-
+    reshape_twiddles_128();
     // Stage 1: N2 × N1 FFT
     for (int b = 0; b < N2; b++) {
         for (int i = 0; i < N1; i++) {
@@ -200,6 +217,7 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
     transpose_mxn_block_16x8(&output[0], &temp[0][0], 128, 32);
 
     // Stage 4: N1 × N2 FFT
+    reshape_twiddles_32();
     for (int b = 0; b < N1; b++) fft_32_stockham(temp[b]);
 
     // Stage 5: transpose
