@@ -155,7 +155,7 @@ void fft_32_stockham(complex_t output[FFT_32])
 }
 
 
-#define BLOCK_M 16
+#define BLOCK_M 8
 #define BLOCK_N 8
 void transpose_mxn_block_16x8(
     const complex_t *restrict src,
@@ -210,7 +210,7 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
     }
 
     // Stage 3: transpose
-    transpose_mxn_block_16x8(&output[0], &temp[0][0], 128, 32);
+    transpose_mxn_block_16x8(&output[0], &temp[0][0], 32, 128);
 
     // Stage 4: N1 × N2 FFT
 
@@ -220,7 +220,7 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
     }
 
     // Stage 5: transpose
-    transpose_mxn_block_16x8(&temp[0][0], &output[0], 32, 128);
+    transpose_mxn_block_16x8(&temp[0][0], &output[0], 128, 32);
 
 }
 
