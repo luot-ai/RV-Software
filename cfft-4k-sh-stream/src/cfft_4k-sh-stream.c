@@ -89,6 +89,16 @@ static int cfg_stride(uint32_t stride,int fifo_id)
     return 0; 
 }
 
+static int cfg_tilestride(uint32_t tilestride,int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 3, 1, x0, %0, %1"
+             :
+             :"r"(tilestride),"r"(fifo_id)
+     );
+    return 0; 
+}
+
 //100
 static int cfg_reuse(uint32_t reuse,int fifo_id)
 {
@@ -121,26 +131,15 @@ static int cfg_axi_load(uint32_t addr,int fifo_id)
     return 0; 
 }
 
-// 110
-// TODO 把这个移到cfg_stride funct3
-static int cfg_tilestride(uint32_t tilestride,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 6, 0, x0, %0, %1"
-             :
-             :"r"(tilestride),"r"(fifo_id)
-     );
-    return 0; 
-}
 
-// 寄寄流指令
+// 110: 寄寄流指令
 // TODO
 // dst流限定为 12号流的合体
 // base=0+limit，limit = 2, stride = limit << 1, LENGTH32 change LINE, DOUBLE
 static int cal_rjrk_stream(uint32_t lo, uint32_t hi)
 {
     asm volatile (
-       ".insn r 0x0b, 6, 1, x0, %0, %1"
+       ".insn r 0x0b, 6, 0, x0, %0, %1"
        :
        : "r"(lo), "r"(hi)
      );
@@ -154,6 +153,18 @@ static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1)
 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
     asm volatile (
        ".insn r 0x0b, 7, 0, %0, %1, x0"
+             :"=r"(rd) 
+             :"r"(rs1)
+     );
+    return rd; 
+}
+
+static int cal_stream_rd_sub(int fifo_id_src0,int fifo_id_src1)
+{
+    int rd;
+	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+    asm volatile (
+       ".insn r 0x0b, 7, 8, %0, %1, x0"
              :"=r"(rd) 
              :"r"(rs1)
      );
