@@ -51,16 +51,16 @@ static int cfg_i_repeat(int repeat,int fifo_id)
 
 //010 
 // TODO 目前是硬件直接确定src为0和1，dst为2，后续可以改成指令编码控制
-static int cal_stream(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
-{
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 2, 0, x0, %0, %1"
-             :
-             :"r"(rs1),"r"(fifo_id_dst)
-     );
-    return 0; 
-}
+// static int cal_stream(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
+// {
+// 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+//     asm volatile (
+//        ".insn r 0x0b, 2, 0, x0, %0, %1"
+//              :
+//              :"r"(rs1),"r"(fifo_id_dst)
+//      );
+//     return 0; 
+// }
 
 //  TODO
 //  流流 -> 流，dst不是固定为2，而是0和1的合体
@@ -121,22 +121,22 @@ static int cfg_load(uint32_t addr,int fifo_id)
     return 0; 
 }
 
-static int cfg_axi_load(uint32_t addr,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 5, 1, x0, %0, %1"
-             :
-             :"r"(addr),"r"(fifo_id)
-     );
-    return 0; 
-}
+// static int cfg_axi_load(uint32_t addr,int fifo_id)
+// {
+//     asm volatile (
+//        ".insn r 0x0b, 5, 1, x0, %0, %1"
+//              :
+//              :"r"(addr),"r"(fifo_id)
+//      );
+//     return 0; 
+// }
 
 
 // 110: 寄寄流指令
 // TODO
 // dst流限定为 12号流的合体
 // base=0+limit，limit = 2, stride = limit << 1, LENGTH32 change LINE, DOUBLE
-static int cal_rjrk_stream(uint32_t lo, uint32_t hi)
+static int cal_rjrk_stream_pp(uint32_t lo, uint32_t hi)
 {
     asm volatile (
        ".insn r 0x0b, 6, 0, x0, %0, %1"
@@ -147,17 +147,17 @@ static int cal_rjrk_stream(uint32_t lo, uint32_t hi)
 }
 
 //111
-static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1)
-{
-    int rd;
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 7, 0, %0, %1, x0"
-             :"=r"(rd) 
-             :"r"(rs1)
-     );
-    return rd; 
-}
+// static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1)
+// {
+//     int rd;
+// 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+//     asm volatile (
+//        ".insn r 0x0b, 7, 0, %0, %1, x0"
+//              :"=r"(rd) 
+//              :"r"(rs1)
+//      );
+//     return rd; 
+// }
 
 static int cal_stream_rd_sub(int fifo_id_src0,int fifo_id_src1)
 {
@@ -184,7 +184,7 @@ static inline void store_shifted(int64_t x)
         : "+r"(hi), "+r"(lo)   
     );
 
-    cal_rjrk_stream(lo, hi);
+    cal_rjrk_stream_pp(lo, hi);
 }
 
 
@@ -231,8 +231,8 @@ static inline void complex_add_stream( ) {
 // TODO 通过funct7增加 减法
 // 流流 寄
 static inline void complex_subtract_stream(complex_t* result) {
-    cal_stream_rd(0,1);//src流索引+1,reuse-1 = 0
-    cal_stream_rd(0,1);//src流索引+1,->limit ,no repeat
+    cal_stream_rd_sub(0,1);//src流索引+1,reuse-1 = 0
+    cal_stream_rd_sub(0,1);//src流索引+1,->limit ,no repeat
 }
 
 
@@ -338,10 +338,13 @@ void fft_32_stockham(complex_t output[FFT_32])
             complex_t wp = twiddle_stage_32[tw_idx];
 
             for (int q = 0; q < s; q++) {
-                complex_add_stream();
+                complex_t a = src[q + s * (p + 0)];
+                complex_t b = src[q + s * (p + m)];
+
+                complex_add(a, b, &dst[q + s * (2 * p + 0)]);
                 complex_t t;
-                complex_subtract_stream(&t);
-                complex_multiply_stream(t, wp);
+                complex_subtract(a,b,&t);
+                complex_multiply(t, wp, &dst[q + s * (2 * p + 1)]);
             }
         }
 
@@ -362,6 +365,64 @@ void fft_32_stockham(complex_t output[FFT_32])
 
 }
 
+void fft_32_stockham_stream(complex_t output[FFT_32])
+{
+    complex_t y[FFT_32];
+    complex_t *src = output;
+    complex_t *dst = y;
+
+    int s = 1;          /* stride */
+
+    for (int stage = 0; stage < LOG2_FFT_32 - 1; stage++) {
+        int m = FFT_32 >> (stage + 1);      /* current half size */
+
+        for (int p = 0; p < m; p++) {
+            int tw_idx = (p << stage);
+            complex_t wp = twiddle_stage_32[tw_idx];
+
+            for (int q = 0; q < s; q++) {
+                complex_add_stream();
+                complex_t t;
+                complex_subtract_stream(&t);
+                complex_multiply_stream(t, wp);
+            }
+        }
+
+        /* 下一层 */
+        s <<= 1;
+
+        /* ping-pong buffer */
+        complex_t *tmp = src;
+        src = dst;
+        dst = tmp;
+    }
+
+    // last-stage
+    int stage = LOG2_FFT_32;
+    int m = FFT_32 >> (stage + 1);
+    for (int p = 0; p < m; p++) {
+        int tw_idx = (p << stage);
+        complex_t wp = twiddle_stage_32[tw_idx];
+
+        for (int q = 0; q < s; q++) {
+            complex_add_stream();
+            complex_t t;
+            complex_subtract_stream(&t);
+            complex_multiply(t, wp, &dst[q + s * (2 * p + 1)]); //write to areg，not stream buffer 
+        }
+    }
+
+    complex_t *tmp = src;
+    src = dst;
+    dst = tmp;
+
+    /* 如果最终结果在 y，拷回 x */
+    if (src != output) {
+        for (int i = 0; i < FFT_32; i++)
+            output[i] = src[i];
+    }
+
+}
 
 #define BLOCK_M 8
 #define BLOCK_N 8
@@ -432,13 +493,46 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
 
 }
 
+// int main() {
+//     static complex_t test_input[FFT_N];
+//     static complex_t fft_output[FFT_N];
+//     for (int i = 0; i < FFT_N; i++) {
+//         test_input[i].real = 32767;
+//         test_input[i].imag = 0;
+//     }    
+//     fft_4K_block(test_input, fft_output);
+//     return 0;
+// }
+
+//just for test
 int main() {
-    static complex_t test_input[FFT_N];
-    static complex_t fft_output[FFT_N];
+    //static complex_t test_input[FFT_N];
+    //static complex_t fft_output[FFT_N];
     for (int i = 0; i < FFT_N; i++) {
-        test_input[i].real = 32767;
-        test_input[i].imag = 0;
+        temp[i/32][i%32].real = 32767;
+        temp[i/32][i%32].imag = 0;
     }    
-    fft_4K_block(test_input, fft_output);
+
+    int dontCare = 4096;
+    int l2LineByte = 128;
+	cfg_i(1,32,0);  
+	cfg_i(1,32,1); 
+    cfg_i_limit(dontCare,0); 
+    cfg_i_limit(dontCare,1);
+    cfg_i_repeat(1,0);  
+    cfg_i_repeat(1,1); 
+    cfg_reuse(2,0);  //reuse for complex add/sub
+    cfg_reuse(2,1);
+    cfg_stride(4,0); 
+    cfg_stride(4,1); 
+    cfg_tilestride(l2LineByte,0); 
+    cfg_tilestride(l2LineByte,1); 
+    cfg_load((uint32_t)temp,0); //这条指令必须在 配置stride指令之后
+	cfg_load((uint32_t)&temp[0][16],1);
+
+    for (int b = 0; b < N1; b++) 
+    {
+        fft_32_stockham_stream(temp[b]);
+    }
     return 0;
 }
