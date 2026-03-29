@@ -231,8 +231,8 @@ static inline void complex_add_stream( ) {
 // TODO 通过funct7增加 减法
 // 流流 寄
 static inline void complex_subtract_stream(complex_t* result) {
-    cal_stream_rd_sub(0,1);//src流索引+1,reuse-1 = 0
-    cal_stream_rd_sub(0,1);//src流索引+1,->limit ,no repeat
+    result->real = cal_stream_rd_sub(0,1);//src流索引+1,reuse-1 = 0
+    result->imag = cal_stream_rd_sub(0,1);//src流索引+1,->limit ,no repeat
 }
 
 
@@ -507,20 +507,22 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
 //just for test
 int main() {
     //static complex_t test_input[FFT_N];
-    //static complex_t fft_output[FFT_N];
+    //static complex_t fft_output[FFT_N]; 
     for (int i = 0; i < FFT_N; i++) {
-        temp[i/32][i%32].real = 32767;
-        temp[i/32][i%32].imag = 0;
+        temp[i/32][i%32].real = i;
+        temp[i/32][i%32].imag = i;
     }    
-
-    int dontCare = 4096;
+    for (int i = 16; i < 32; i++) {
+        temp[0][i].real = 0;
+        temp[0][i].imag = 0;
+    }    
     int l2LineByte = 128;
 	cfg_i(1,32,0);  
 	cfg_i(1,32,1); 
-    cfg_i_limit(dontCare,0); 
-    cfg_i_limit(dontCare,1);
-    cfg_i_repeat(1,0);  
-    cfg_i_repeat(1,1); 
+    cfg_i_limit(2,0); // add2 -> sub2
+    cfg_i_limit(2,1);
+    cfg_i_repeat(2,0);  
+    cfg_i_repeat(2,1); 
     cfg_reuse(2,0);  //reuse for complex add/sub
     cfg_reuse(2,1);
     cfg_stride(4,0); 
