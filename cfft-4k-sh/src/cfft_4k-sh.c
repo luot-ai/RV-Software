@@ -224,13 +224,30 @@ void fft_4K_block(const complex_t input[FFT_N], complex_t output[FFT_N]) {
 
 }
 
+// int main() {
+//     static complex_t test_input[FFT_N];
+//     static complex_t fft_output[FFT_N];
+//     for (int i = 0; i < FFT_N; i++) {
+//         test_input[i].real = 32767;
+//         test_input[i].imag = 0;
+//     }    
+//     fft_4K_block(test_input, fft_output);
+//     return 0;
+// }
+
+//just for test
 int main() {
-    static complex_t test_input[FFT_N];
-    static complex_t fft_output[FFT_N];
     for (int i = 0; i < FFT_N; i++) {
-        test_input[i].real = 32767;
-        test_input[i].imag = 0;
+        temp[i/32][i%32].real = i;
+        temp[i/32][i%32].imag = i;
     }    
-    fft_4K_block(test_input, fft_output);
+    for (int i = 16; i < 32; i++) {
+        temp[0][i].real = 0;
+        temp[0][i].imag = 0;
+    }    
+    for (int b = 0; b < N1; b++) 
+    {
+        fft_32_stockham(temp[b]);
+    }
     return 0;
 }
