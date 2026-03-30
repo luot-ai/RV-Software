@@ -159,6 +159,18 @@ static int cal_rjrk_stream_pp(uint32_t lo, uint32_t hi)
 //     return rd; 
 // }
 
+static int cal_stream_rd_add(int fifo_id_src0,int fifo_id_src1)
+{
+    int rd;
+	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
+    asm volatile (
+       ".insn r 0x0b, 7, 0, %0, %1, x0"
+             :"=r"(rd) 
+             :"r"(rs1)
+     );
+    return rd; 
+}
+
 static int cal_stream_rd_sub(int fifo_id_src0,int fifo_id_src1)
 {
     int rd;
@@ -226,6 +238,11 @@ static inline void complex_multiply_stream(complex_t a, complex_t b) {
 static inline void complex_add_stream( ) {
     cal_stream_pp(0,1,0); //src流索引+1,reuse-1 = 1
     cal_stream_pp(0,1,0); //src流索引+1,->limit repeat
+}
+
+static inline void complex_add_stream_last(complex_t* result) {
+    result->real = cal_stream_rd_add(0,1);//src流索引+1,reuse-1 = 0
+    result->imag = cal_stream_rd_add(0,1);//src流索引+1,->limit ,no repeat
 }
 
 // TODO 通过funct7增加 减法
@@ -367,61 +384,37 @@ void fft_32_stockham(complex_t output[FFT_32])
 
 void fft_32_stockham_stream(complex_t output[FFT_32])
 {
-    complex_t y[FFT_32];
-    complex_t *src = output;
-    complex_t *dst = y;
-
     int s = 1;          /* stride */
-
     for (int stage = 0; stage < LOG2_FFT_32 - 1; stage++) {
         int m = FFT_32 >> (stage + 1);      /* current half size */
-
         for (int p = 0; p < m; p++) {
             int tw_idx = (p << stage);
             complex_t wp = twiddle_stage_32[tw_idx];
-
             for (int q = 0; q < s; q++) {
-                complex_add_stream();
+                complex_add_stream(); 
                 complex_t t;
                 complex_subtract_stream(&t);
                 complex_multiply_stream(t, wp);
             }
         }
-
         /* 下一层 */
         s <<= 1;
-
-        /* ping-pong buffer */
-        complex_t *tmp = src;
-        src = dst;
-        dst = tmp;
     }
 
     // last-stage
-    int stage = LOG2_FFT_32;
+    int stage = LOG2_FFT_32-1;
     int m = FFT_32 >> (stage + 1);
     for (int p = 0; p < m; p++) {
         int tw_idx = (p << stage);
         complex_t wp = twiddle_stage_32[tw_idx];
-
         for (int q = 0; q < s; q++) {
-            complex_add_stream();
+            complex_add_stream_last(&output[q + s * (2 * p + 0)]); //write to areg，not stream buffer 
             complex_t t;
             complex_subtract_stream(&t);
-            complex_multiply(t, wp, &dst[q + s * (2 * p + 1)]); //write to areg，not stream buffer 
+            complex_multiply(t, wp, &output[q + s * (2 * p + 1)]); //write to areg，not stream buffer 
         }
     }
-
-    complex_t *tmp = src;
-    src = dst;
-    dst = tmp;
-
-    /* 如果最终结果在 y，拷回 x */
-    if (src != output) {
-        for (int i = 0; i < FFT_32; i++)
-            output[i] = src[i];
-    }
-
+    //TODO惊喜发现
 }
 
 #define BLOCK_M 8
@@ -527,8 +520,8 @@ int main() {
     cfg_reuse(2,1);
     cfg_stride(4,0); 
     cfg_stride(4,1); 
-    cfg_tilestride(l2LineByte,0); 
-    cfg_tilestride(l2LineByte,1); 
+    cfg_tilestride(2*l2LineByte,0); 
+    cfg_tilestride(2*l2LineByte,1); 
     cfg_load((uint32_t)temp,0); //这条指令必须在 配置stride指令之后
 	cfg_load((uint32_t)&temp[0][16],1);
 
@@ -538,3 +531,4 @@ int main() {
     }
     return 0;
 }
+
