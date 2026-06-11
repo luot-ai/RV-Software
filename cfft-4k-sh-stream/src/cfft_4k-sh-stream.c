@@ -1,43 +1,12 @@
 // ...existing code...
 #include "cfft.h"
+#include "stream_instr.h"
 // #include <stdio.h>
 #include <stdint.h>
 #define FFT_N 4096
 #define LOG2_FFT_N 12
 
 //000
-static int cfg_i(int outerIter,int length,int fifo_id)
-{
-    int rs1 = (outerIter & 0xffff) | ((length & 0xffff) << 16);
-    asm volatile (
-       ".insn r 0x0b, 0, 0, x0, %0, %1"
-             :
-             :"r"(rs1),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-static int cfg_i_limit(int limit,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 0, 1, x0, %0, %1"
-             :
-             :"r"(limit),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-static int cfg_i_repeat(int repeat,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 0, 2, x0, %0, %1"
-             :
-             :"r"(repeat),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-
 //001
 // static int cfg_store(uint32_t addr,int fifo_id)
 // {
@@ -66,61 +35,6 @@ static int cfg_i_repeat(int repeat,int fifo_id)
 //  流流 -> 流，dst不是固定为2，而是0和1的合体
 //  为这个指令增加一系列配置指令，满足索引需求
 //  base=0，limit = 2, stride = limit << 1, LENGTH32 change LINE, DOUBLE
-static int cal_stream_pp(int fifo_id_src0,int fifo_id_src1,int fifo_id_dst)
-{
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 2, 1, x0, %0, %1"
-             :
-             :"r"(rs1),"r"(fifo_id_dst)
-     );
-    return 0; 
-}
-
-
-//011
-static int cfg_stride(uint32_t stride,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 3, 0, x0, %0, %1"
-             :
-             :"r"(stride),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-static int cfg_tilestride(uint32_t tilestride,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 3, 1, x0, %0, %1"
-             :
-             :"r"(tilestride),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-//100
-static int cfg_reuse(uint32_t reuse,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 4, 0, x0, %0, %1"
-             :
-             :"r"(reuse),"r"(fifo_id)
-     );
-    return 0; 
-}
-
-//101
-static int cfg_load(uint32_t addr,int fifo_id)
-{
-    asm volatile (
-       ".insn r 0x0b, 5, 0, x0, %0, %1"
-             :
-             :"r"(addr),"r"(fifo_id)
-     );
-    return 0; 
-}
-
 // static int cfg_axi_load(uint32_t addr,int fifo_id)
 // {
 //     asm volatile (
@@ -136,55 +50,6 @@ static int cfg_load(uint32_t addr,int fifo_id)
 // TODO
 // dst流限定为 12号流的合体
 // base=0+limit，limit = 2, stride = limit << 1, LENGTH32 change LINE, DOUBLE
-static int cal_rjrk_stream_pp(uint32_t lo, uint32_t hi)
-{
-    asm volatile (
-       ".insn r 0x0b, 6, 0, x0, %0, %1"
-       :
-       : "r"(lo), "r"(hi)
-     );
-    return 0; 
-}
-
-//111
-// static int cal_stream_rd(int fifo_id_src0,int fifo_id_src1)
-// {
-//     int rd;
-// 	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-//     asm volatile (
-//        ".insn r 0x0b, 7, 0, %0, %1, x0"
-//              :"=r"(rd) 
-//              :"r"(rs1)
-//      );
-//     return rd; 
-// }
-
-static int cal_stream_rd_add(int fifo_id_src0,int fifo_id_src1)
-{
-    int rd;
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 7, 0, %0, %1, x0"
-             :"=r"(rd) 
-             :"r"(rs1)
-     );
-    return rd; 
-}
-
-static int cal_stream_rd_sub(int fifo_id_src0,int fifo_id_src1)
-{
-    int rd;
-	int rs1 = (fifo_id_src0 & 0x3) | ((fifo_id_src1 & 0x3) << 2);
-    asm volatile (
-       ".insn r 0x0b, 7, 8, %0, %1, x0"
-             :"=r"(rd) 
-             :"r"(rs1)
-     );
-    return rd; 
-}
-
-
-
 static inline void store_shifted(int64_t x)
 {
     int32_t hi = (int32_t)(x >> 32);
