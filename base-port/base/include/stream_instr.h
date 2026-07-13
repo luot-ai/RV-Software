@@ -37,6 +37,16 @@ STREAM_INSTR_ATTR int cfg_i_repeat(int repeat, int fifo_id)
     return 0;
 }
 
+STREAM_INSTR_ATTR int cfg_i_offset(uint32_t offset, int fifo_id)
+{
+    asm volatile (
+       ".insn r 0x0b, 0, 3, x0, %0, %1"
+             :
+             : "r"(offset), "r"(fifo_id)
+     );
+    return 0;
+}
+
 // 001
 STREAM_INSTR_ATTR int cfg_store(uint32_t addr, int fifo_id)
 {
@@ -101,6 +111,16 @@ STREAM_INSTR_ATTR int cfg_reuse(uint32_t reuse, int fifo_id)
        ".insn r 0x0b, 4, 0, x0, %0, %1"
              :
              : "r"(reuse), "r"(fifo_id)
+     );
+    return 0;
+}
+
+STREAM_INSTR_ATTR int cfg_reuse_empty(void)
+{
+    asm volatile (
+       ".insn r 0x0b, 4, 1, x0, x0, x0"
+             :
+             :
      );
     return 0;
 }
